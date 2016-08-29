@@ -4,16 +4,76 @@
 
 <head>
 
+    <style>
+        .selected {
+            border: 4px dashed pink;
+        }
+    </style>
     <script type="text/javascript">
 
         (function(){
-            function cb(data) { 
-                //usereturneddata 
-            } 
+
+            function toggleClassName(element, className) {
+                if (!element || !className) {
+                    return;
+                }
+
+                var classStr = element.className,
+                    nameIndex = classStr.indexOf(className);
+                if (nameIndex == -1) {
+                    classStr += ' ' + className;
+                } else {
+                    classStr = classStr.substr(0, nameIndex) + classStr.substr(nameIndex + className.length);
+                }
+                element.className = classStr;
+            }
+
             var tags='london';
             var script = document.createElement('script');
+
+            window.storage = JSON.parse(localStorage.getItem('images')) || [];
+
+            window.cb = function(data) {
+                for (var i = 0; i < data.items.length; i++) {
+                    var image = data.items[i];
+                    var classImage = "";
+                    if (window.checkImgSelected(image)) {
+                        classImage = 'selected'
+                    }
+                    document.getElementById('images').innerHTML += '<img class="' + classImage + '" id="' + i + '" onClick="imgClick(this, ' + i + ');" src=' + image.media.m + '/>';
+                }
+            }
+
+            window.checkImgSelected = function(image) {
+                var result = window.storage.filter(function(obj) {
+                    return obj.src.indexOf(image.media.m) > -1 && obj.isSelected
+                });
+                return (result && result.length > 0);
+            }
+
             script.src = 'http://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=cb&tags=' + tags;
+
             document.head.appendChild(script);
+
+            window.imgClick = function(el) {
+                toggleClassName(el, "selected");
+
+                var currentImg = window.storage.filter(function(obj) {
+                    return el.src == obj.src
+                })[0];
+                if (!currentImg) {
+                    currentImg = {
+                        'src': el.src
+                    };
+                    window.storage.push(currentImg);
+                }
+                if (el.className.indexOf('selected') == -1) {
+                    currentImg.isSelected = false;
+                } else {
+                    currentImg.isSelected = true;
+                }
+                localStorage.setItem('images', JSON.stringify(window.storage));
+            }
         })();
 
         </script>
@@ -21,7 +81,7 @@
 </head>
 
 <body>
-
+    <div id="images"></div>
 </body>
 
 </html>
